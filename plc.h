@@ -14,6 +14,10 @@ struct sensorX {
 	int n;
 };
 
+struct timeval tv;
+/*readfds*/
+fd_set  readset;
+
 int sensorX_init(struct sensorX *sx, int n_id, int *id, int *data);
 int sensorX_get(struct serialsosurce *ss, struct sensorX *sx);
 int sensorX_set(struct serialsosurce *ss, struct sensorX *sx);

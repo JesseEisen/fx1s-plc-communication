@@ -65,15 +65,11 @@ int controller_get(struct serialsosurce *ss, int id, int *status)
 	serial_command(ss, &sc);
 	
 	char buf[255];
-	int sz;
-	struct timeval tv;
-	fd_set readset;
-	int    ret; /*select return*/
-
-
-	tv.tv_sec = 5; /*wait 5 seconds*/
+	int  sz;
+	int  ret; /*select return*/
+	
+	tv.tv_sec = 5;
 	tv.tv_usec = 0;
-	FD_ZERO(&readset);/*clear readset bit*/
 	FD_SET(fd[0],&readset);/*let fd[0] seted in readset*/
 	if((ret = select((fd[0]+1),&readset,NULL,NULL,&tv))< 0){
 		printf("select error\n");
@@ -81,9 +77,7 @@ int controller_get(struct serialsosurce *ss, int id, int *status)
 	}else if(ret == 0){
 		printf("filedes are not ready for read within 5s\n");
 		return -1;
-	}else
-		printf("Data is available now!\n");
-
+	}
 	sz = read(fd[0], buf, 255);
 	
 	int i;
@@ -176,7 +170,20 @@ int sensor_get(struct serialsosurce *ss, int id, int *data)
 	
 	char buf[255];
 	int sz;
+	int ret; /*select return value*/
 
+	FD_ZERO(&readset);
+	FD_SET(fd[0],&readset);
+	tv.tv_sec = 5;
+	tv.tv_usec = 0;
+	
+	if((ret = select((fd[0]+1),&readset,NULL,NULL,&tv)) < 0){
+		printf("select error\n");
+		return -1;
+	}else if(ret == 0){
+		printf("filedes not ready\n");
+		return -1;
+	}
 	sz = read(fd[0], buf, 255);
 //	int i;
 //	for (i = 0; i < sz; i++) {
