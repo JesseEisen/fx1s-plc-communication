@@ -34,6 +34,22 @@ int controller_set(struct serialsosurce *ss, int id, int status)
 	
 	char buf[255];
 	int sz;
+	int ret; /*select return value*/
+	struct timeval tv;
+	fd_set readset;
+
+	FD_ZERO(&readset);
+	FD_SET(fd[0],&readset);
+	tv.tv_sec = 2;
+	tv.tv_usec = 0;
+	
+	if((ret = select((fd[0]+1),&readset,NULL,NULL,&tv)) < 0){
+		printf("select error\n");
+		return -1;
+	}else if(ret == 0){
+		printf("filedes not ready\n");
+		return -1;
+	} 
 
 	sz = read(fd[0], buf, 255);
 	int i;
@@ -72,8 +88,9 @@ int controller_get(struct serialsosurce *ss, int id, int *status)
 	
 	tv.tv_sec = 2;
 	tv.tv_usec = 0;
+	FD_ZERO(&readset);
 	FD_SET(fd[0],&readset);/*let fd[0] seted in readset*/
-	if((ret = select((fd[0]+1),&readset,NULL,NULL,&tv))< 0){
+	if((ret = select(( fd[0]+1),&readset,NULL,NULL,&tv))< 0){
 		printf("select error\n");
 		return -1;
 	}else if(ret == 0){
@@ -144,6 +161,22 @@ int sensor_set(struct serialsosurce *ss, int id, int data)
 	
 	char buf2[255];
 	int sz;
+	int ret; /*select return value*/
+	struct timeval tv;
+	fd_set readset;
+
+	FD_ZERO(&readset);
+	FD_SET(fd[0],&readset);
+	tv.tv_sec = 2;
+	tv.tv_usec = 0;
+	
+	if((ret = select((fd[0]+1),&readset,NULL,NULL,&tv)) < 0){
+		printf("select error\n");
+		return -1;
+	}else if(ret == 0){
+		printf("filedes not ready\n");
+		return -1;
+	} 
 
 	sz = read(fd[0], buf2, 255);
 	int i;
@@ -188,6 +221,7 @@ int sensor_get(struct serialsosurce *ss, int id, int *data)
 		printf("filedes not ready\n");
 		return -1;
 	} 
+
 	sz = read(fd[0], buf, 255);
 //	int i;
 //	for (i = 0; i < sz; i++) {
@@ -233,7 +267,8 @@ int sensorX_set(struct serialsosurce *ss, struct sensorX *sx)
 {
 	int i;
 	for (i = 0; i < sx->n; i++) {
-		sensor_set(ss, sx->id[i], sx->data[i]);
+		if(sensor_set(ss, sx->id[i], sx->data[i]) == -1)
+			return -1;
 	}
 	return 0;
 }
