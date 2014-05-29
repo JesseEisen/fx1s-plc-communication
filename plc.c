@@ -2,34 +2,6 @@
 #include "plc.h"
 #include <sys/select.h>
 
-/*print the message and return to caller*/
-static void _err_doit(int errorflag, int error, const char *fmt, va_list ap)
-{
-	char buf[MAXLINE];
-
-	vsnprintf(buf,MAXLINE,fmt,ap);
-
-	if(errorflag)
-		snprintf(buf+strlen(buf),MAXLINE-strlen(buf),": %s",strerror(error));
-	strcat(buf,"\n");
-	fflush(stdout);
-	fputs(buf,stderr);
-	fflush(NULL);
-
-}
-
-/*error handler: print error info and terminal*/
-static void _err_sys(const char *fmt, ...)
-{
-	va_list  ap;
-	
-	va_start(ap,fmt);
-	_err_doit(1,errno,fmt,ap);
-	va_end(ap);
-
-	exit(1);
-}
-
 static int _cb_async(void *cxt, char *buf, int sz)
 {	
 	int fd = (int)cxt;
@@ -78,7 +50,7 @@ int controller_set(struct serialsosurce *ss, int id, int status)
 	} else {
 		return -1;
 	}	
-}
+} 
 
 int controller_get(struct serialsosurce *ss, int id, int *status)
 {
@@ -103,12 +75,15 @@ int controller_get(struct serialsosurce *ss, int id, int *status)
 	tv.tv_usec = 0;
 	FD_ZERO(&readset);/*clear readset bit*/
 	FD_SET(fd[0],&readset);/*let fd[0] seted in readset*/
-	if((ret = select(1,&readset,NULL,NULL,&tv))< 0)
-		_err_sys("select error");
-	else if(ret == 0)
-		_err_sys("filedes are not ready for read");
-	else
+	if((ret = select((fd[0]+1),&readset,NULL,NULL,&tv))< 0){
+		printf("select error\n");
+		return -1;
+	}else if(ret == 0){
+		printf("filedes are not ready for read within 5s\n");
+		return -1;
+	}else
 		printf("Data is available now!\n");
+
 	sz = read(fd[0], buf, 255);
 	
 	int i;
