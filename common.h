@@ -18,10 +18,12 @@
 #include <signal.h>
 #include <pthread.h>
 #include <termios.h>
+#include <stdarg.h>
 
 #include "debug.h"
 
 #define OPEN  1
 #define CLOSE 0
+#define MAXLINE 4096
 
 #endif

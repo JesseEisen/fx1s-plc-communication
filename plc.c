@@ -1,5 +1,34 @@
 #include "common.h"
 #include "plc.h"
+#include <sys/select.h>
+
+/*print the message and return to caller*/
+static void _err_doit(int errorflag, int error, const char *fmt, va_list ap)
+{
+	char buf[MAXLINE];
+
+	vsnprintf(buf,MAXLINE,fmt,ap);
+
+	if(errorflag)
+		snprintf(buf+strlen(buf),MAXLINE-strlen(buf),": %s",strerror(error));
+	strcat(buf,"\n");
+	fflush(stdout);
+	fputs(buf,stderr);
+	fflush(NULL);
+
+}
+
+/*error handler: print error info and terminal*/
+static void _err_sys(const char *fmt, ...)
+{
+	va_list  ap;
+	
+	va_start(ap,fmt);
+	_err_doit(1,errno,fmt,ap);
+	va_end(ap);
+
+	exit(1);
+}
 
 static int _cb_async(void *cxt, char *buf, int sz)
 {	
@@ -65,10 +94,25 @@ int controller_get(struct serialsosurce *ss, int id, int *status)
 	
 	char buf[255];
 	int sz;
+	struct timeval tv;
+	fd_set readset;
+	int    ret; /*select return*/
 
+
+	tv.tv_sec = 5; /*wait 5 seconds*/
+	tv.tv_usec = 0;
+	FD_ZERO(&readset);/*clear readset bit*/
+	FD_SET(fd[0],&readset);/*let fd[0] seted in readset*/
+	if((ret = select(1,&readset,NULL,NULL,&tv))< 0)
+		_err_sys("select error");
+	else if(ret == 0)
+		_err_sys("filedes are not ready for read");
+	else
+		printf("Data is available now!\n");
 	sz = read(fd[0], buf, 255);
+	
 	int i;
-	for (i = 0; i < sz; i++) {
+	for (i = 0; i <  sz; i++) {
 		printf("%02x ", buf[i]);
 	}
 
